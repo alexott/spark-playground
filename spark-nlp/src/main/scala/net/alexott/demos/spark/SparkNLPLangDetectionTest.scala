@@ -2,6 +2,10 @@ package net.alexott.demos.spark
 
 import org.apache.spark.sql.SparkSession
 
+/* This code is evaluating the SparkNLP's language detection against the dataset that is linked
+   to the post http://alexott.blogspot.com/2017/10/evaluating-fasttexts-models-for.html
+
+ */
 object SparkNLPLangDetectionTest {
 
   def main(args: Array[String]): Unit = {
@@ -54,7 +58,7 @@ object SparkNLPLangDetectionTest {
     val finalResults = countsByLanguage.join(detectsByLanguage, countsByLanguage("src_lang") === detectsByLanguage("src_lang"))
       .select(countsByLanguage("src_lang"), $"count", $"correct", ($"correct"/$"count").as("precision"))
 
-    finalResults.show(languages.size)
+    finalResults.sort($"src_lang").show(languages.size)
 
 // looking for incorrect results
 //    results.filter($"src_lang" === "es").filter($"det_lang" =!= "es").show(10)
