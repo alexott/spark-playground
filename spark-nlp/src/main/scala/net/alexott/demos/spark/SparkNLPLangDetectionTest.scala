@@ -23,7 +23,7 @@ object SparkNLPLangDetectionTest {
 
     // languages supported by Spark NLP model
     val languages = Set("bg", "cz", "de", "el", "en", "es", "fi", "fr", "hr", "hu", "it",
-      "no", "pl", "pt", "ro", "ru", "sl", "sv", "tr", "uk")
+      "no", "pl", "pt", "ro", "ru", "sk", "sv", "tr", "uk")
 
     val testData = spark.read.text("/Users/ott/development/NLP/lang-detect-data")
       .select($"value".as("text"),
