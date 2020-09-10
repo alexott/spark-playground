@@ -74,7 +74,7 @@ object SparkNLPLangDetectionTest {
       .sort($"src_lang".asc)
       .coalesce(1)
       .write // we can also do .partitionBy("$src_lang") to output by language, then disable coalesce
-      .json("file:/tmp/wrong_detectsions.txt")
+      .json("file:/tmp/wrong_detections.txt")
 
   }
 }
