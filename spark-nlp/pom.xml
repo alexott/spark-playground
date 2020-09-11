@@ -16,7 +16,7 @@
     <spark.version>2.4.6</spark.version>
     <spark.scala.version>2.11</spark.scala.version>
     <java.version>1.8</java.version>
-    <spark.nlp.version>2.5.4</spark.nlp.version>
+    <spark.nlp.version>2.6.0</spark.nlp.version>
   </properties>
 
   <repositories>
@@ -29,24 +29,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_${spark.scala.version}</artifactId>
-      <version>${spark.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
       <artifactId>spark-mllib_${spark.scala.version}</artifactId>
-      <version>${spark.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql-kafka-0-10_${spark.scala.version}</artifactId>
-      <version>${spark.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_${spark.scala.version}</artifactId>
       <version>${spark.version}</version>
       <scope>provided</scope>
     </dependency>
