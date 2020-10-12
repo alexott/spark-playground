@@ -1,0 +1,5 @@
+chispa
+spark-testing-base
+pytest-spark
+pyspark==2.4.5
+psutil

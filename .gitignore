@@ -31,3 +31,5 @@ hs_err_pid*
 /*/target/
 /*/\.idea/
 /*/*.iml
+/testing/metastore_db/
+/testing/src/python/__pycache__/
