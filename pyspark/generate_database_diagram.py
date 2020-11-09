@@ -9,8 +9,10 @@ import sys
 
 name_offset = 3
 pad_offset = 2
-include_temp = True
 
+# TODO: allow to specify via command-line
+include_temp = False
+enable_hive_support = False
 
 def is_struct_type(typ: object) -> bool:
     return isinstance(typ, dict) and typ['type'] == 'struct'
@@ -88,14 +90,19 @@ def format_structfield(type_val: object, padding: int, isNullable: bool = False)
         raise Exception(f'Unknown type: {type_val}')
 
     if isNullable:
-        type_string += '?'
+        type_string += ' ?'
     return type_string
 
 
-def format_type_name(col_name: str, typ: StructField) -> str:
+def format_type_name(col_name: str, typ: StructField, isNullable: bool = False,
+                     isPartition: bool = False, isBucket: bool = False) -> str:
     current_pad = len(col_name) + name_offset
     jsn = typ.jsonValue()
-    type_string = format_structfield(jsn['type'], current_pad, jsn.get('nullable', False))
+    type_string = format_structfield(jsn['type'], current_pad, isNullable)
+    if isPartition:
+        type_string += " (pk)"
+    if isBucket:
+        type_string += " (bk)"
     return type_string.replace('\n', '\\n')
 
 
@@ -116,12 +123,15 @@ def generate_plantuml_schema(spark: SparkSession, databases: list, file_name: st
                 if include_temp or not tbl["isTemporary"]:  # include only not temporary tables
                     lines = []
                     try:
-                        lines.append(f'class {table_name} {{')
-                        cols = spark.sql(f"describe table `{db}`.`{table_name}`")
-                        for cl in cols.collect():
-                            col_name = cl["col_name"]
-                            schema = spark.createDataFrame([], cl["data_type"]).schema[0]
-                            type_string = format_type_name(col_name, schema)
+                        tmp_txt = ""
+                        if tbl["isTemporary"]:
+                            tmp_txt = "(temp)"
+                        lines.append(f'class {table_name} {tmp_txt} {{')
+                        cols = spark.catalog.listColumns(table_name, dbName=db)
+                        for cl in cols:
+                            col_name = cl.name
+                            schema = spark.createDataFrame([], cl.dataType).schema[0]
+                            type_string = format_type_name(col_name, schema, cl.nullable, cl.isPartition)
                             lines.append(f'{{field}} {col_name} : {type_string}')
 
                         lines.append('}\n')
@@ -139,14 +149,16 @@ if __name__ == '__main__':
     # list of databases/namespaces to analyze.  Could be empty, then all existing databases/namespaces will be processed
     # put databases/namespace to handle
     databases = [x for x in sys.argv if len(x) > 0 and not x.endswith(".py")]
-    print(f"databases={databases}")
     # change this if you want to include temporary tables as well
 
     # implementation
-    spark = SparkSession.builder.appName("Database Schema Generator").enableHiveSupport().getOrCreate()
+    builder = SparkSession.builder.appName("Database Schema Generator")
+    if enable_hive_support:
+        builder.enableHiveSupport()
+    spark = builder.getOrCreate()
 
     # if databases aren't specified, then fetch list from the Spark
     if len(databases) == 0:
-        databases = [db["namespace"] for db in spark.sql("show databases").collect()]
+        databases = [db[0] for db in spark.sql("show databases").collect()]
 
     generate_plantuml_schema(spark, databases, "db_schema.puml")
