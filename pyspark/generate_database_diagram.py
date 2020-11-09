@@ -131,7 +131,7 @@ def generate_plantuml_schema(spark: SparkSession, databases: list, file_name: st
                         for cl in cols:
                             col_name = cl.name
                             schema = spark.createDataFrame([], cl.dataType).schema[0]
-                            type_string = format_type_name(col_name, schema, cl.nullable, cl.isPartition)
+                            type_string = format_type_name(col_name, schema, cl.nullable, cl.isPartition, cl.isBucket)
                             lines.append(f'{{field}} {col_name} : {type_string}')
 
                         lines.append('}\n')
