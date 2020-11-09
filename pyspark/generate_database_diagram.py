@@ -4,17 +4,106 @@
 
 from pyspark.sql import SparkSession
 from pyspark.sql.utils import AnalysisException
+from pyspark.sql.types import *
 import sys
 
-# TODO: format arrays/maps/strings with correct padding, including the nested pieces & split on the '<', etc.
-def format_type_name(col_name, typ):
-    pad_string = " " * (len(col_name) + 6)
-    return str(typ).replace(",", f",\\n{pad_string}")
+name_offset = 3
+pad_offset = 2
+include_temp = True
 
-def generate_plantuml_schema(spark, databases, file_name):
+
+def is_struct_type(typ: object) -> bool:
+    return isinstance(typ, dict) and typ['type'] == 'struct'
+
+
+def maybe_get_field(obj: object, name: str, default: object) -> object:
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return default
+
+
+def format_structfield(type_val: object, padding: int, isNullable: bool = False) -> str:
+    if isinstance(type_val, str):
+        type_string = type_val
+    elif isinstance(type_val, dict):
+        sub_type = type_val['type']
+        if sub_type == 'array':
+            type_string = "array< "
+            element_type = type_val['elementType']
+            is_struct = is_struct_type(element_type)
+            if is_struct:
+                type_string += "\n"
+                padding += pad_offset
+                type_string += (" " * padding)
+
+            type_string += format_structfield(element_type, padding, type_val.get('containsNull', False))
+            if is_struct:
+                type_string += "\n"
+                padding -= pad_offset
+                type_string += (" " * (padding - pad_offset))
+
+            type_string += " >"
+        elif sub_type == 'map':
+            # TODO: fix it - need to find the example of output
+            type_string = "map< "
+            element_type = type_val['keyType']
+            is_struct = is_struct_type(element_type)
+            if is_struct:
+                type_string += "\n"
+                type_string += (" " * padding)
+                padding += pad_offset
+
+            type_string += format_structfield(element_type, padding)
+            if is_struct:
+                padding -= pad_offset
+            type_string += ", "
+
+            element_type = type_val['valueType']
+            is_struct = is_struct_type(element_type)
+            if is_struct:
+                type_string += "\n"
+                type_string += (" " * padding)
+                padding += pad_offset
+            type_string += format_structfield(element_type, padding, type_val.get('valueContainsNull', False))
+            if is_struct:
+                type_string += "\n"
+                padding -= pad_offset
+                type_string += (" " * (padding - pad_offset))
+
+            type_string += " >"
+        elif sub_type == 'struct':
+            pad_str = (" " * (padding + pad_offset))
+            type_string = "struct<\n"
+            for field in type_val['fields']:
+                fname = field['name']
+                type_string += pad_str + fname + " : "
+                type_string += format_structfield(field['type'], padding + len(fname) + name_offset + pad_offset,
+                                                  field.get('nullable', False))
+                type_string += "\n"
+
+            type_string += (" " * padding) + ">"
+        else:
+            raise Exception(f'Unknown subtype: {sub_type}')
+    else:
+        raise Exception(f'Unknown type: {type_val}')
+
+    if isNullable:
+        type_string += '?'
+    return type_string
+
+
+def format_type_name(col_name: str, typ: StructField) -> str:
+    current_pad = len(col_name) + name_offset
+    jsn = typ.jsonValue()
+    type_string = format_structfield(jsn['type'], current_pad, jsn.get('nullable', False))
+    return type_string.replace('\n', '\\n')
+
+
+def generate_plantuml_schema(spark: SparkSession, databases: list, file_name: str):
     with open(file_name, "w") as f:
         f.write("\n".join(["@startuml", "skinparam packageStyle rectangle",
-                           "hide circle", "hide empty methods", "", ""]))
+                           "hide circle", "hide empty methods",
+                           "skinparam defaultFontName Courier", "", ""]))
 
         for database_name in databases[:3]:
             print(f"processing database {database_name}")
@@ -23,6 +112,7 @@ def generate_plantuml_schema(spark, databases, file_name):
             for tbl in tables.collect():
                 table_name = tbl["tableName"]
                 db = tbl["database"]
+                # TODO: we can try to parallelize this by running in the thread pool
                 if include_temp or not tbl["isTemporary"]:  # include only not temporary tables
                     lines = []
                     try:
@@ -30,8 +120,9 @@ def generate_plantuml_schema(spark, databases, file_name):
                         cols = spark.sql(f"describe table `{db}`.`{table_name}`")
                         for cl in cols.collect():
                             col_name = cl["col_name"]
-                            data_type = format_type_name(col_name, cl["data_type"])
-                            lines.append(f'{{field}} {col_name} : {data_type}')
+                            schema = spark.createDataFrame([], cl["data_type"]).schema[0]
+                            type_string = format_type_name(col_name, schema)
+                            lines.append(f'{{field}} {col_name} : {type_string}')
 
                         lines.append('}\n')
                         f.write("\n".join(lines))
@@ -42,6 +133,7 @@ def generate_plantuml_schema(spark, databases, file_name):
 
         f.write("@enduml\n")
 
+
 if __name__ == '__main__':
     # Variables
     # list of databases/namespaces to analyze.  Could be empty, then all existing databases/namespaces will be processed
@@ -49,10 +141,9 @@ if __name__ == '__main__':
     databases = [x for x in sys.argv if len(x) > 0 and not x.endswith(".py")]
     print(f"databases={databases}")
     # change this if you want to include temporary tables as well
-    include_temp = False
 
     # implementation
-    spark = SparkSession.builder.appName("Database Schema Generator").getOrCreate()
+    spark = SparkSession.builder.appName("Database Schema Generator").enableHiveSupport().getOrCreate()
 
     # if databases aren't specified, then fetch list from the Spark
     if len(databases) == 0:
