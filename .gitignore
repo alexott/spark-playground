@@ -34,3 +34,4 @@ hs_err_pid*
 /testing/metastore_db/
 /testing/src/python/__pycache__/
 /pyspark/*.svg
+fasttext-lang-detect/src/main/resources/lid.176.ftz
