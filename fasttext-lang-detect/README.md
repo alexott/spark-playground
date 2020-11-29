@@ -37,20 +37,24 @@ bin/spark-shell --jars <path-to>/fasttext-lang-detect-0.0.1-jar-with-dependencie
 And in the code just instantiate the `FastTextLangDetectTransformer` class, and set input & output columns, like this: 
 
 ```scala
-    val langDetectTransformer = new net.alexott.fasttext_langdetect.FastTextLangDetectTransformer()
-      .setInputCol("text")
-      .setOutputCol("language")
+import net.alexott.fasttext_langdetect.FastTextLangDetectTransformer
+val langDetectTransformer = new net.alexott.fasttext_langdetect.FastTextLangDetectTransformer()
+  .setInputCol("text")
+  .setOutputCol("language")
 
-    val actualDF = langDetectTransformer.transform(sourceDF)
+val actualDF = langDetectTransformer.transform(sourceDF)
 ```
 
 By default `FastTextLangDetectTransformer` uses 0.7 as minimum probability for language detection.  It could be explicitly set using the `setMinProbability` method:
 
 ```scala
-    val langDetectTransformer = new net.alexott.fasttext_langdetect.FastTextLangDetectTransformer()
-      .setInputCol("text")
-      .setOutputCol("language")
-      .setMinProbability(0.3)
+import net.alexott.fasttext_langdetect.FastTextLangDetectTransformer
+val langDetectTransformer = new net.alexott.fasttext_langdetect.FastTextLangDetectTransformer()
+  .setInputCol("text")
+  .setOutputCol("language")
+  .setMinProbability(0.3)
+
+val actualDF = langDetectTransformer.transform(sourceDF)
 ```
 
 ## Spark ML (Python)
