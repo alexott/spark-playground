@@ -34,3 +34,4 @@ hs_err_pid*
 /testing/metastore_db/
 /testing/src/python/__pycache__/
 /pyspark/*.svg
+*.atxt

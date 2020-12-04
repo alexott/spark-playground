@@ -116,6 +116,8 @@ def generate_plantuml_schema(spark: SparkSession, databases: list, file_name: st
             print(f"processing database {database_name}")
             f.write(f'package "{database_name}" {{\n')
             tables = spark.sql(f"show tables in `{database_name}`")
+            partition_keys = {}
+            columns_mapping = {}
             for tbl in tables.collect():
                 table_name = tbl["tableName"]
                 db = tbl["database"]
@@ -128,16 +130,43 @@ def generate_plantuml_schema(spark: SparkSession, databases: list, file_name: st
                             tmp_txt = "(temp)"
                         lines.append(f'class {table_name} {tmp_txt} {{')
                         cols = spark.catalog.listColumns(table_name, dbName=db)
+                        # TODO: find the column with the longest name, and use it as offset for all?
+                        # Pad actual column name to that length
+                        column_names = []
+                        columns = []
                         for cl in cols:
                             col_name = cl.name
+                            column_names.append(col_name)
                             schema = spark.createDataFrame([], cl.dataType).schema[0]
-                            type_string = format_type_name(col_name, schema, cl.nullable, cl.isPartition, cl.isBucket)
-                            lines.append(f'{{field}} {col_name} : {type_string}')
+                            is_partition = cl.isPartition
+                            if is_partition:
+                                if col_name in partition_keys:
+                                    partition_keys[col_name].add(table_name)
+                                else:
+                                    partition_keys[col_name] = {table_name}
+                            type_string = format_type_name(col_name, schema, cl.nullable,
+                                                           is_partition, cl.isBucket)
+                            columns.append({'name': col_name, 'is_pk': is_partition, 'type': type_string})
+
+                        columns.sort(key=lambda col: (not col['is_pk'], col['name'].lower()))
+                        for col in columns:
+                            lines.append(f'{{field}} {col["name"]} : {col["type"]}')
 
                         lines.append('}\n')
                         f.write("\n".join(lines))
+                        columns_mapping[table_name] = column_names
                     except AnalysisException as ex:
                         print(f"Error when trying to describe {tbl.database}.{table_name}: {ex}")
+
+            links = set()
+            for table_name, columns in columns_mapping.items():
+                for col in columns:
+                    for pkey_table in partition_keys.get(col, []):
+                        if table_name != pkey_table:
+                            links.add(f'{table_name} *.. {pkey_table}: {col}\n')
+
+            for link in links:
+                f.write(link)
 
             f.write("}\n\n")
 
