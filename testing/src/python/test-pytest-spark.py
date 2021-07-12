@@ -1,6 +1,7 @@
 import pyspark
 import pyspark.sql
 import pytest
+from pyspark.sql import SparkSession
 
 
 def test_spark_session_sql(spark_session):
