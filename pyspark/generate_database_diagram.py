@@ -116,6 +116,7 @@ def generate_plantuml_schema(spark: SparkSession, databases: list, file_name: st
             print(f"processing database {database_name}")
             f.write(f'package "{database_name}" {{\n')
             tables = spark.sql(f"show tables in `{database_name}`")
+            # TODO: allow to pass additional mapping between table and partition keys in it that aren't defined explicitly
             partition_keys = {}
             columns_mapping = {}
             for tbl in tables.collect():
