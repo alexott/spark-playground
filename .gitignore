@@ -36,3 +36,5 @@ hs_err_pid*
 /pyspark/*.svg
 *.atxt
 fasttext-lang-detect/src/main/resources/lid.176.ftz
+/testing/.vscode/
+.DS_Store

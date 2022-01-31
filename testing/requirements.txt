@@ -1,5 +1,5 @@
 chispa
 spark-testing-base
 pytest-spark
-pyspark==2.4.5
+delta-spark==1.1.0
 psutil

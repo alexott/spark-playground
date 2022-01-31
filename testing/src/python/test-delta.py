@@ -3,6 +3,7 @@ import pyspark.sql
 import pytest
 import shutil
 from pyspark.sql import SparkSession
+from delta.tables import DeltaTable
 
 delta_dir_name = "/tmp/delta-table"
 
@@ -14,7 +15,6 @@ def delta_setup(spark_session):
     shutil.rmtree(delta_dir_name, ignore_errors=True)
 
 def test_delta(spark_session, delta_setup):
-    from delta.tables import DeltaTable
     deltaTable = DeltaTable.forPath(spark_session, delta_dir_name)
     hist = deltaTable.history()
     assert hist.count() == 1
