@@ -19,6 +19,7 @@ Install necessary dependencies with: `pip install -r requirements.txt`
 
 Examples:
 * [test-pytest-spark.py](src/python/test-pytest-spark.py) - demonstrates use of [pytest-spark](https://github.com/malexer/pytest-spark).  Run with `pytest src/python/test-pytest-spark.py`
+* [test-builtin.py](src/python/test-builtin.py) - demonstrates the use of the [PySpark's built-in testing framework](https://spark.apache.org/docs/3.5.1/api/python/reference/pyspark.testing.html) (requires Spark 3.5+).   Run with `pytest src/python/test-builtin.py`
 * [test-chispa.py](src/python/test-chispa.py) - demonstrates use of [chispa](https://github.com/MrPowers/chispa).  Run with `pytest src/python/test-chispa.py`
 * [test-spark-testing-base.py](src/python/test-spark-testing-base.py) - demonstrates use of [spark-testing-base](https://github.com/holdenk/spark-testing-base).  Run with `python src/python/test-spark-testing-base.py`
 * [test-delta.py](src/python/test-delta.py) - demonstrates use of [pytest-spark](https://github.com/malexer/pytest-spark) to setup the Delta for testing.  Run with `pytest src/python/test-delta.py`

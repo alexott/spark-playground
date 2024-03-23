@@ -1,5 +1,0 @@
-chispa
-spark-testing-base
-pytest-spark
-delta-spark==1.1.0
-psutil

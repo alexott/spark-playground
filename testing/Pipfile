@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+chispa = "*"
+spark-testing-base = "*"
+pytest-spark = "*"
+delta-spark = "3.1.0"
+pyspark = {version=">=3.5.0", extras=["sql"]}
+psutil = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
+python_full_version = "3.8.19"
